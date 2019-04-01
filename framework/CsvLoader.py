@@ -71,6 +71,7 @@ class CsvLoader(MessageHandler.MessageUser):
     for index in range(len(self.allFieldNames)):
       self.allFieldNames[index] = self.allFieldNames[index].strip()
     # load the table data (from the csv file) into a numpy nd array
+    print("myFile",myFile)
     data = np.loadtxt(myFile,dtype='float',delimiter=',',ndmin=2,skiprows=1)
     # close file
     myFile.close()

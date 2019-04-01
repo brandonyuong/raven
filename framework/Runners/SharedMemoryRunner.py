@@ -69,6 +69,7 @@ class SharedMemoryRunner(InternalRunner):
       @ In, profile, bool, optional, if True then at deconstruction timing statements will be printed
       @ Out, None
     """
+    #print("*"*40,repr(functionToRun))
     ## First, allow the base class handle the commonalities
     # we keep the command here, in order to have the hook for running exec code into internal models
     super(SharedMemoryRunner, self).__init__(messageHandler, args, functionToRun, identifier, metadata, uniqueHandler, profile)
@@ -101,6 +102,7 @@ class SharedMemoryRunner(InternalRunner):
       @ In, None
       @ Out, returnCode, int,  the return code of this evaluation
     """
+    self.raiseAMessage('getReturnCode',self.returnCode, self.runReturn, len(self.subque))
     if not self.hasBeenAdded:
       self._collectRunnerResponse()
     ## Is this necessary and sufficient for all failed runs?

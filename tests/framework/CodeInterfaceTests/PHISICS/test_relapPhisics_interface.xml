@@ -1,5 +1,5 @@
 <?xml version="1.0" ?>
-<Simulation>
+<Simulation verbosity="debug">
   <TestInfo>
     <name>framework/CodeInterfaceTests/PHISICS.phisicsRelap5</name>
     <author>rouxpn</author>

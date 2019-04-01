@@ -411,6 +411,7 @@ class Code(Model):
       @ In, origCommand, string, The command to check for expantion
       @ Out, commandSplit, string or String List, the expanded command or the original if not expanded.
     """
+    origCommand = origCommand.strip()
     if origCommand.strip() == '':
       return origCommand
     # In Windows Python, you can get some backslashes in your paths
@@ -544,7 +545,7 @@ class Code(Model):
     command = command.replace("%METHOD%",kwargs['METHOD'])
     command = command.replace("%NUM_CPUS%",kwargs['NUM_CPUS'])
 
-    self.raiseAMessage('Execution command submitted:',command)
+    self.raiseAMessage('Execution command submitted:',repr(command))
     if platform.system() == 'Windows':
       command = self._expandForWindows(command)
       self.raiseAMessage("modified command to", repr(command))
@@ -571,6 +572,7 @@ class Code(Model):
       process.wait()
 
     returnCode = process.returncode
+    self.raiseAMessage('actual return code',returnCode)
     # procOutput = process.communicate()[0]
 
     ## If the returnCode is already non-zero, we should maintain our current
@@ -579,6 +581,7 @@ class Code(Model):
     ## failure.
     if returnCode == 0 and 'checkForOutputFailure' in dir(self.code):
       codeFailed = self.code.checkForOutputFailure(codeLogFile, metaData['subDirectory'])
+      self.raiseAMessage('codeFailed',codeFailed)
       if codeFailed:
         returnCode = -1
     # close the log file
@@ -591,6 +594,7 @@ class Code(Model):
     ## My guess is that every code interface implements this given that the code
     ## below always adds .csv to the filename and the standard output file does
     ## not have an extension. - (DPM 4/6/2017)
+    self.raiseAMessage("file closed")
     outputFile = codeLogFile
     if 'finalizeCodeOutput' in dir(self.code) and returnCode == 0:
       finalCodeOutputFile = self.code.finalizeCodeOutput(command, codeLogFile, metaData['subDirectory'])
@@ -602,26 +606,35 @@ class Code(Model):
         self.raiseAnError(RuntimeError, 'The return argument from "finalizeCodeOutput" must be a str containing the new output file root!')
       if finalCodeOutputFile and not ravenCase:
         outputFile = finalCodeOutputFile
-
+    
+    self.raiseAMessage("other stuff done")
     ## If the run was successful
     if returnCode == 0:
       returnDict = {}
+      self.raiseAMessage("created returnDict",returnDict)
       ## This may be a tautology at this point --DPM 4/12/17
       ## Special case for RAVEN interface. Added ravenCase flag --ALFOA 09/17/17
       if outputFile is not None and not ravenCase:
+        self.raiseAMessage("returnDict 1",returnDict)
         outFile = Files.CSV()
+        self.raiseAMessage("returnDict 2",returnDict)
         ## Should we be adding the file extension here?
         outFile.initialize(outputFile+'.csv',self.messageHandler,path=metaData['subDirectory'])
-
+        self.raiseAMessage("returnDict 3",returnDict)
         csvLoader = CsvLoader.CsvLoader(self.messageHandler)
+        self.raiseAMessage("returnDict 4",returnDict)
         csvData = csvLoader.loadCsvFile(outFile)
+        self.raiseAMessage("returnDict 5",returnDict)
         headers = csvLoader.getAllFieldNames()
+        self.raiseAMessage("returnDict 6",returnDict)
 
         ## Numpy by default iterates over rows, thus we transpose the data and
         ## zip it with the headers in order to do store it very cleanly into a
         ## dictionary.
         for header,data in zip(headers, csvData.T):
+          self.raiseAMessage("returnDict 8",returnDict)
           returnDict[header] = data
+      self.raiseAMessage("returnDict 10",returnDict)
       if not ravenCase:
         self._replaceVariablesNamesWithAliasSystem(returnDict, 'inout', True)
         returnDict.update(kwargs)
@@ -666,7 +679,7 @@ class Code(Model):
               rlz[var] = np.atleast_1d(val)
           self._replaceVariablesNamesWithAliasSystem(rlz,'inout',True)
           exportDict['realizations'].append(rlz)
-
+      self.raiseAMessage("returnDict 20", returnDict)
       ## The last thing before returning should be to delete the temporary log
       ## file and any other file the user requests to be cleared
       if deleteSuccessfulLogFiles:
@@ -676,11 +689,13 @@ class Code(Model):
           os.remove(codeLofFileFullPath)
 
       ## Check if the user specified any file extensions for clean up
+      self.raiseAMessage("returnDict 30", returnDict)
       for fileExt in fileExtensionsToDelete:
         fileList = [ os.path.join(metaData['subDirectory'],f) for f in os.listdir(metaData['subDirectory']) if f.endswith(fileExt) ]
         for f in fileList:
           os.remove(f)
 
+      self.raiseAMessage("*"*40+"process succeed with return",repr(exportDict))
       return exportDict
 
     else:
@@ -692,6 +707,7 @@ class Code(Model):
         self.raiseAMessage(" No output " + absOutputFile)
 
       ## If you made it here, then the run must have failed
+      self.raiseAMessage("*"*40+"processed failed with return",repr(None))
       return None
 
   def createExportDictionary(self, evaluation):
